@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f6f5f9">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 64 64&#x27;%3E%3Crect width=&#x27;64&#x27; height=&#x27;64&#x27; rx=&#x27;16&#x27; fill=&#x27;%237657e8&#x27;/%3E%3Ctext x=&#x27;32&#x27; y=&#x27;42&#x27; text-anchor=&#x27;middle&#x27; fill=&#x27;white&#x27; font-size=&#x27;30&#x27; font-family=&#x27;sans-serif&#x27;%3Eh3%3C/text%3E%3C/svg%3E">
+  <title data-i18n="H3 视频工作台">H3 Video Studio</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/i18n.js"></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="H3 Video Studio home" data-i18n-aria-label="H3 视频工作台首页"><span class="brand-mark">h3<span>✦</span></span><span><span data-i18n="视频工作台">Video Studio</span><small>POWERED BY RUNNINGHUB</small></span></a>
+    <div class="topbar-actions"><label class="language-control"><span data-i18n="语言">Language</span><select id="language-select" aria-label="Language" data-i18n-aria-label="语言"><option value="en">English</option><option value="zh-CN">简体中文</option></select></label><button id="open-system-settings" class="secondary-button" type="button" data-i18n="⚙ 系统设置">⚙ System Settings</button><button id="open-settings" class="connection-button"><span class="status-dot"></span><span id="connection-label" data-i18n="读取配置中">Loading configuration</span><span class="gear">⚙</span></button></div>
+  </header>
+  <main class="workspace">
+    <section class="intro"><div class="intro-copy"><div class="eyebrow">MINIMAX H3 · VIDEO STUDIO</div><h1><span data-i18n="视频生成">Video Generation</span><span data-i18n="工作台">Workspace</span></h1><p data-i18n="持续创作，集中查看任务进度与生成视频。">Keep creating. Track progress and manage your videos in one place.</p></div><div id="queue-overview" class="queue-overview" role="status" data-i18n="正在读取生成队列…">Loading generation queue…</div></section>
+    <div id="setup-banner" class="setup-banner" hidden><span id="setup-message"></span><button id="banner-settings" class="text-button" data-i18n="连接工作流 ↗">Workflow Setup ↗</button></div>
+    <div class="workbench">
+      <section class="composer panel" aria-labelledby="composer-heading">
+        <div class="panel-heading"><div><span class="step-label">CREATE</span><h2 id="composer-heading" data-i18n="创建视频">Create Video</h2></div><span class="model-tag">MiniMax H3</span></div>
+        <form id="generate-form">
+          <div class="field-heading"><label for="image-input" data-i18n="参考图">Reference Images</label><span id="image-count" data-i18n="0 张">0 images</span></div>
+          <label id="dropzone" class="dropzone" for="image-input"><span class="upload-icon">＋</span><strong data-i18n="点击添加，或将图片拖到这里">Click to add or drag images here</strong><span data-i18n="PNG / JPG / WEBP · 每张小于 30MB">PNG / JPG / WEBP · Under 30MB each</span><input id="image-input" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-label="Add reference images" data-i18n-aria-label="添加参考图"></label>
+          <div id="image-list" class="image-list"></div>
+          <p class="field-help" data-i18n="图片顺序对应「参考图1、参考图2…」，可调整顺序。">Images correspond to Reference 1, Reference 2, etc. You can reorder them.</p>
+          <div class="field-heading prompt-heading"><label for="prompt" data-i18n="提示词">Prompt</label><span id="prompt-count">0 / 20000</span></div>
+          <textarea id="prompt" name="prompt" rows="5" maxlength="20000" required placeholder="Describe the subjects, actions, camera movement, and sound…" data-i18n-placeholder="描述参考图中的主体、动作、镜头和声音…"></textarea>
+          <div class="duration-field"><div><label for="duration" data-i18n="视频时长">Duration</label><p id="duration-help" data-i18n="连接工作流后，按实际支持范围选择。">Connect a workflow to see the supported range.</p></div><div class="duration-input"><input id="duration" name="duration" type="number" step="1" min="1" value="8" required><span data-i18n="秒">s</span></div></div>
+          <div id="form-error" class="inline-error" role="alert" hidden></div>
+          <button id="generate-button" class="primary-button generate-button" type="submit" disabled><span>✦</span><span data-i18n="生成视频">Generate Video</span><span class="button-arrow">↗</span></button>
+          <p id="submit-hint" class="submit-hint" role="status" data-i18n="先连接工作流，即可开始创作">Connect a workflow to start creating</p><p class="composer-note" data-i18n="提交后按系统设置等待，再创建下一条；已有任务在后台运行。">Wait for the submission interval before creating another task. Existing tasks run in the background.</p>
+        </form>
+      </section>
+      <section class="results" aria-labelledby="results-heading">
+        <div class="results-heading"><div><span class="step-label">VIDEO LIBRARY</span><h2 id="results-heading"><span data-i18n="生成记录">Video Library</span><span id="job-count">0</span></h2></div><div class="results-tools"><button id="open-resource-directory" class="secondary-button" type="button" data-i18n="打开生成资源目录">Open Video Folder</button><button id="refresh-jobs" class="icon-button" title="Refresh video library" aria-label="Refresh video library" data-i18n-aria-label="刷新生成记录" data-i18n-title="刷新生成记录">↻</button></div></div>
+        <div class="library-stats" aria-label="Task statistics" data-i18n-aria-label="任务统计"><button data-filter="all" class="stat-card active"><span data-i18n="全部任务">All Tasks</span><strong data-count="all">0</strong></button><button data-filter="active" class="stat-card"><span><i class="live-dot"></i><span data-i18n="进行中">In Progress</span></span><strong data-count="active">0</strong></button><button data-filter="succeeded" class="stat-card"><span data-i18n="已完成">Completed</span><strong data-count="succeeded">0</strong></button><button data-filter="attention" class="stat-card"><span data-i18n="需处理">Needs Attention</span><strong data-count="attention">0</strong></button></div>
+        <div class="library-toolbar"><nav class="filters" aria-label="Filter tasks" data-i18n-aria-label="筛选任务"><button data-filter="all" class="active" data-i18n="全部">All</button><button data-filter="active" data-i18n="进行中">In Progress</button><button data-filter="succeeded" data-i18n="已完成">Completed</button><button data-filter="attention" data-i18n="需处理">Needs Attention</button></nav><div class="library-search-tools"><label class="search-field"><span aria-hidden="true">⌕</span><input id="job-search" type="search" maxlength="200" placeholder="Search prompts or task IDs" aria-label="Search prompts or task IDs" data-i18n-aria-label="搜索提示词或任务 ID" data-i18n-placeholder="搜索提示词或任务 ID"></label><select id="job-sort" aria-label="Sort tasks" data-i18n-aria-label="任务排序"><option value="newest" data-i18n="最新创建">Newest First</option><option value="active" data-i18n="进行中优先">Active First</option><option value="oldest" data-i18n="最早创建">Oldest First</option></select></div></div>
+        <div class="library-caption"><span id="result-count" role="status" data-i18n="正在读取任务…">Loading tasks…</span><label><span data-i18n="每页">Per page</span><select id="page-size" aria-label="Tasks per page" data-i18n-aria-label="每页任务数"><option value="12">12</option><option value="24">24</option><option value="48">48</option></select><span data-i18n="条">tasks</span></label></div>
+        <div id="library-error" class="inline-error" role="alert" hidden></div>
+        <div id="jobs-container"></div>
+        <div id="empty-state" class="empty-state" hidden><div class="empty-art" aria-hidden="true"><span class="frame-back"></span><span class="frame-front">▷<i>✦</i></span></div><h3 id="empty-title" data-i18n="创建你的第一段视频">Create your first video</h3><p id="empty-description" data-i18n="提交任务后，在这里查看进度与生成结果。">Submit a task to see its progress and video here.</p></div>
+        <nav id="pagination" class="pagination" aria-label="Task pagination" hidden data-i18n-aria-label="任务分页"><span id="page-range"></span><div><button id="previous-page" class="secondary-button" type="button" data-i18n="← 上一页">← Previous</button><span id="page-label"></span><button id="next-page" class="secondary-button" type="button" data-i18n="下一页 →">Next →</button></div></nav>
+      </section>
+    </div>
+    <footer><span data-i18n="参考图 → 提示词 → 视频">Reference Images → Prompt → Video</span><a href="https://www.runninghub.cn/workflow/2108942308824670209?source=workspace" target="_blank" rel="noopener noreferrer" id="workflow-link" data-i18n="查看 RunningHub 工作流 ↗">View RunningHub Workflow ↗</a></footer>
+  </main>
+
+  <dialog id="system-settings-dialog" aria-labelledby="system-settings-title">
+    <div class="dialog-header"><div><span class="step-label">SYSTEM SETTINGS</span><h2 id="system-settings-title" data-i18n="系统设置">System Settings</h2></div><button id="close-system-settings" class="icon-button" aria-label="Close system settings" data-i18n-aria-label="关闭系统设置">×</button></div>
+    <p class="settings-description" data-i18n="控制全系统的视频生成数量和客户端提交间隔，保存后立即生效。">Set generation limits and submission intervals for the whole system. Changes take effect when saved.</p>
+    <form id="system-settings-form">
+      <div class="setup-section"><label for="max-concurrent-generations" data-i18n="最大同时生成数">Maximum Concurrent Generations</label><input id="max-concurrent-generations" type="number" min="1" max="100" step="1" value="3" required><p class="field-help" data-i18n="默认 3 个。超出的任务按提交顺序排队，排队号自动更新。降低上限后，已有任务继续运行。">Default: 3. Additional tasks queue in submission order, with positions updated automatically. Existing tasks continue if you lower the limit.</p></div>
+      <div class="setup-section"><label for="client-cooldown-seconds" data-i18n="同一客户端提交间隔（秒）">Submission Interval per Client (seconds)</label><input id="client-cooldown-seconds" type="number" min="0" max="86400" step="1" value="60" required><p class="field-help" data-i18n="默认 60 秒，0 表示关闭间隔限制。同一浏览器的多个标签页共用等待时间，刷新仍有效。">Default: 60 seconds. Set to 0 to disable the interval. Tabs in the same browser share the countdown, which persists after refresh.</p></div>
+      <div id="system-settings-error" class="inline-error" role="alert" hidden></div>
+      <button id="save-system-settings" class="primary-button" type="submit" data-i18n="保存系统设置">Save System Settings</button>
+    </form>
+  </dialog>
+  <dialog id="settings-dialog">
+    <div class="dialog-header"><div><span class="step-label">WORKFLOW SETUP</span><h2 data-i18n="连接工作流">Workflow Setup</h2></div><button id="close-settings" class="icon-button" aria-label="Close workflow setup" data-i18n-aria-label="关闭配置">×</button></div>
+    <p class="settings-description" data-i18n="首次连接时，确认工作流的输入位置。配置会保存在本机。">Confirm the workflow input fields on first setup. Configuration is saved locally.</p>
+    <div class="key-status"><span id="key-state"></span><small data-i18n="在项目 .env 中设置 RUNNINGHUB_API_KEY，保存后重启服务。">Set RUNNINGHUB_API_KEY in the project's .env file, then restart the service.</small></div>
+    <div class="setup-section"><h3 data-i18n="1. 读取工作流">1. Load Workflow</h3><p class="field-help" id="workflow-id"></p><div class="setup-actions"><button id="fetch-workflow" class="secondary-button" data-i18n="从 RunningHub 拉取">Fetch from RunningHub</button><label class="secondary-button file-button"><span data-i18n="导入 API JSON">Import API JSON</span><input id="workflow-file" type="file" accept=".json,application/json" hidden></label></div><p id="graph-state" class="field-help" data-i18n="尚未读取节点">No nodes loaded</p></div>
+    <form id="mapping-form">
+      <div class="setup-section"><h3 data-i18n="2. 对应输入参数">2. Map Input Fields</h3><p class="field-help" data-i18n="选项来自工作流的真实节点；请按节点用途选择。">Select fields from the workflow's actual nodes according to their purpose.</p>
+        <div class="mapping-grid"><label><span data-i18n="提示词字段">Prompt Field</span><select id="prompt-binding" required></select></label><label><span data-i18n="时长字段（秒）">Duration Field (seconds)</span><select id="duration-binding" required></select></label></div>
+        <div class="mapping-grid"><label><span data-i18n="图片输入方式">Image Input Mode</span><select id="image-mode"><option value="slots" data-i18n="逐张图片槽位">Individual Image Slots</option><option value="list" data-i18n="图片列表">Image List</option><option value="zip" data-i18n="ZIP 图片包">ZIP Image Archive</option><option value="h3_dynamic" data-i18n="H3 可变参考图">H3 Dynamic References</option></select></label><label id="list-encoding-label" hidden><span data-i18n="列表传入格式">List Encoding</span><select id="list-encoding"><option value="array" data-i18n="JSON 数组">JSON Array</option><option value="json" data-i18n="JSON 文本">JSON Text</option></select></label></div>
+        <div class="field-heading"><label data-i18n="图片输入（按参考图顺序）">Image Inputs (reference order)</label><button type="button" id="add-image-binding" class="text-button" data-i18n="＋ 添加槽位">＋ Add Slot</button></div>
+        <div id="image-bindings"></div>
+        <p id="empty-slot-help" class="field-help" data-i18n="可选槽位请填写工作流支持的空值（JSON，例如 &quot;None&quot;）。留空则必须上传该槽位的图片，避免带入模板默认图。">For optional slots, enter a supported empty value as JSON (e.g. "None"). Otherwise an image is required for that slot to avoid using the template's default image.</p>
+        <p id="h3-dynamic-help" class="field-help" hidden data-i18n="按上传数量同步提供给提示词增强和视频生成节点，支持 1–9 张有序参考图。">Provide the uploaded images to both prompt enhancement and video generation nodes. Supports 1–9 ordered references.</p>
+        <div class="mapping-grid limits"><label><span data-i18n="最少参考图">Minimum Images</span><input id="min-images" type="number" min="1" value="1" required></label><label><span data-i18n="最多参考图">Maximum Images</span><input id="max-images" type="number" min="1" max="100" required></label><label><span data-i18n="最短时长（秒）">Minimum Duration (seconds)</span><input id="min-duration" type="number" min="1" required></label><label><span data-i18n="最长时长（秒）">Maximum Duration (seconds)</span><input id="max-duration" type="number" min="1" required></label></div>
+        <p class="field-help" data-i18n="数量和时长请按当前工作流支持范围填写。">Use image counts and durations supported by the current workflow.</p>
+      </div>
+      <div id="settings-error" class="inline-error" role="alert" hidden></div>
+      <button id="save-mapping" class="primary-button" type="submit" data-i18n="保存并验证映射">Save and Validate Mapping</button>
+    </form>
+  </dialog>
+  <dialog id="job-details-dialog"><div class="dialog-header"><h2 data-i18n="任务详情">Task Details</h2><button id="close-job-details" class="icon-button" aria-label="Close task details" data-i18n-aria-label="关闭任务详情">×</button></div><div id="job-details-content"></div></dialog>
+  <div id="toast" role="status" class="toast" hidden></div>
+</body>
+</html>

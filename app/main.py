@@ -15,8 +15,10 @@ from pydantic import BaseModel, ValidationError
 
 from app.config import Settings, SystemSettings
 from app.jobs import JobManager
+from app.llm import TextModel
 from app.runninghub import RunningHub, RunningHubError
 from app.store import CooldownError, Store, TERMINAL_PHASES
+from app.storyboard import creation_router
 from app.workflow import WorkflowConfig, node_names, parse_graph
 
 STATIC = Path(__file__).parent / "static"
@@ -46,12 +48,14 @@ class ResolveUnknown(BaseModel):
     confirmed_not_submitted: Literal[True]
 
 
-def create_app(settings: Settings | None = None, client: RunningHub | None = None) -> FastAPI:
+def create_app(settings: Settings | None = None, client: RunningHub | None = None,
+               llm: TextModel | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     settings.data_dir.mkdir(parents=True, exist_ok=True)
     store = Store(settings.data_dir / "jobs.sqlite3")
     rh = client or RunningHub(settings.api_key, settings.base_url)
     manager = JobManager(settings, store, rh)
+    text_model = llm or TextModel(settings)
 
     @asynccontextmanager
     async def lifespan(app):
@@ -59,10 +63,12 @@ def create_app(settings: Settings | None = None, client: RunningHub | None = Non
         yield
         await manager.close()
         await rh.close()
+        await text_model.close()
 
     application = FastAPI(title="RunningHub Video Studio", lifespan=lifespan)
     application.state.store = store
     application.state.manager = manager
+    application.include_router(creation_router(text_model))
     application.mount("/static", StaticFiles(directory=STATIC, check_dir=False), name="static")
 
     @application.middleware("http")
@@ -72,7 +78,8 @@ def create_app(settings: Settings | None = None, client: RunningHub | None = Non
         request.state.client_id = cookie if valid else uuid.uuid4().hex
         request.state.has_client_cookie = valid
         response = await call_next(request)
-        if request.url.path in {"/", "/static/style.css", "/static/app.js", "/static/i18n.js"}:
+        if request.url.path in {"/", "/static/style.css", "/static/app.js", "/static/i18n.js",
+                                "/static/creation.js", "/static/creation-stream.js"}:
             response.headers["Cache-Control"] = "no-cache"
         if not valid:
             response.set_cookie("video_client", request.state.client_id, max_age=31536000,

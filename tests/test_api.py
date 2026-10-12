@@ -13,7 +13,8 @@ from app.main import create_app
 
 def test_page_and_layout_assets_revalidate_to_avoid_mixed_versions(tmp_path):
     with TestClient(create_app(Settings(data_dir=tmp_path))) as client:
-        for path in ("/", "/static/style.css", "/static/app.js"):
+        for path in ("/", "/static/style.css", "/static/app.js", "/static/i18n.js",
+                     "/static/creation.js", "/static/creation-stream.js"):
             response = client.get(path)
             assert response.status_code == 200
             assert response.headers.get("Cache-Control") == "no-cache"

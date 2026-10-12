@@ -16,6 +16,8 @@ Python 3.11+。Windows PowerShell：
 
 启动脚本会创建 `.env`、虚拟环境并安装依赖。打开 http://127.0.0.1:8765 。更换端口使用 `./start.ps1 -Port 8766`。
 
+重复运行启动脚本会检查指定端口：如果监听者是当前项目 `.venv` 启动的 `app.main:create_app` Uvicorn 服务，停止旧进程、等待端口释放后重新启动，并重新读取 `.env`。Windows 虚拟环境启动器创建的子 Python 进程也能识别。若端口被其他程序或其他项目占用，脚本会显示冲突进程 ID 并退出；不能确认进程归属时也不会停止它。端口范围为 1–65535，停止后最多等待 10 秒释放端口。
+
 也可手动启动：
 
 ```powershell
@@ -77,6 +79,18 @@ Copy-Item .env.example .env
 
 ## 进度与长任务
 
+### 剧本与文字分镜
+
+创建视频栏的「剧本与分镜」打开独立创作弹窗：创意 → 可编辑剧本 → 多个可编辑文字分镜 → 填入视频提示词。文本生成不依赖 RunningHub 已配置；视频生成继续使用现有工作流。
+
+文本客户端调用 OpenAI 兼容 `POST {LLM_BASE_URL}/chat/completions`。页面使用 `stream: true`，服务商需支持 SSE 的 `choices[0].delta.content` 文本增量；不要求 JSON 模式参数。剧本正文和每镜字段随输出实时显示，生成期间只读，最终验证结构、数量、连续序号、时长和 H3 格式后才保存为草稿并允许编辑/使用。中途预览不会覆盖原草稿；超时、认证失败、限流、断流、截断和格式错误会恢复已有创作内容并提示重试，不自动重试付费请求。模型尚未输出内容时显示等待状态。原非流式 JSON API 继续兼容 `choices[0].message.content`。
+
+剧本创意最多 20000 字符，剧本正文最多 40000 字符。分镜数量为 1–24（默认 6），每镜时长默认 8 秒，通用/自定义格式支持 1–120 秒，H3 格式支持 4–15 秒。每镜包括标题、画面/动作、景别与运镜、对白/声音和独立 Prompt，Prompt 最多 20000 字符。H3 使用英文视听描述、保留原语言对白，并要求 `integrated_multimodal_description`、`overall_soundscape`、`non_diegetic_music` 三个核心部分；未提供参考素材时不虚构素材标签。
+
+目标模型格式和视觉风格独立于实际视频工作流。自定义模式可填写目标模型名和写法要求；它不会切换视频接口。点击「用于视频生成」只填入当前编辑后的 Prompt，并在工作流范围允许时同步时长，随后由用户确认参考图和提交。超范围时保留视频表单原时长并提示调整。
+
+草稿保存在浏览器 localStorage，包含创意、剧本、生成设置及编辑后的文字分镜；不保存 API Key，也不建立服务器剧本历史库。浏览器禁用存储、达到配额或损坏数据时会提示，当前编辑仍可继续。清除浏览器数据会删除草稿；不同浏览器的草稿独立。
+
 ### 系统设置与提交队列
 
 点击右上角 **系统设置**，可调整以下参数，保存到 SQLite 后立即生效，重启仍保留：
@@ -107,6 +121,10 @@ Copy-Item .env.example .env
 | `RUNNINGHUB_BASE_URL` | `https://www.runninghub.cn` |
 | `VIDEO_DATA_DIR` | `./data` |
 | `VIDEO_POLL_SECONDS` | `5`，环境配置最小 1 秒 |
+| `LLM_BASE_URL` | `https://api.openai.com/v1`；API 根地址，系统追加 `/chat/completions` |
+| `LLM_API_KEY` | 空；文本模型服务独立密钥，配置后重启 |
+| `LLM_MODEL` | 空；填写服务商提供的模型名，配置后重启 |
+| `LLM_TIMEOUT_SECONDS` | `120`；请求总超时秒数，限制为 1–600 |
 
 `data` 和 `.env` 均已加入 `.gitignore`。输入素材与生成视频会保留在本机，按需要自行备份或清理已结束任务的文件。
 
@@ -115,6 +133,11 @@ Copy-Item .env.example .env
 | 接口 | 用途 |
 | --- | --- |
 | `GET /api/config` | 查询 KEY 和映射配置状态、节点字段（不返回密钥） |
+| `GET /api/creation/config` | 文本模型配置状态、模型名和目标 Prompt 格式，不返回密钥 |
+| `POST /api/creation/script/stream` | 与剧本 JSON API 相同输入；SSE `preview` 为增量预览，`result` 为校验后的完整剧本，`error` 为安全错误 |
+| `POST /api/creation/storyboard/stream` | 与分镜 JSON API 相同输入；SSE `preview/result/error`；仅 `result` 可保存和用于视频 |
+| `POST /api/creation/script` | JSON `prompt`；返回 `title`、完整可编辑剧本 `content` |
+| `POST /api/creation/storyboard` | JSON `script`、`shot_count`、`duration`、`target_model`（`h3/generic/custom`）、`custom_model`、`visual_style`；返回 `shots`（每项含 `number/title/duration/visual/camera/audio/prompt`） |
 | `POST /api/config/workflow/fetch` | 认证拉取当前工作流 |
 | `POST /api/config/workflow/import` | multipart `file` 导入 API JSON |
 | `PUT /api/config/mapping` | 保存并验证映射 |

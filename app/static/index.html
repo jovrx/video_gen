@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="/static/style.css">
   <script src="/static/i18n.js"></script>
   <script src="/static/app.js" defer></script>
+  <script src="/static/creation-stream.js" defer></script>
+  <script src="/static/creation.js" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -21,6 +23,7 @@
     <div class="workbench">
       <section class="composer panel" aria-labelledby="composer-heading">
         <div class="panel-heading"><div><span class="step-label">CREATE</span><h2 id="composer-heading" data-i18n="创建视频">Create Video</h2></div><span class="model-tag">MiniMax H3</span></div>
+        <button id="open-creation" class="secondary-button creation-entry" type="button" data-i18n="剧本与分镜">Script &amp; Storyboard</button>
         <form id="generate-form">
           <div class="field-heading"><label for="image-input" data-i18n="参考图">Reference Images</label><span id="image-count" data-i18n="0 张">0 images</span></div>
           <label id="dropzone" class="dropzone" for="image-input"><span class="upload-icon">＋</span><strong data-i18n="点击添加，或将图片拖到这里">Click to add or drag images here</strong><span data-i18n="PNG / JPG / WEBP · 每张小于 30MB">PNG / JPG / WEBP · Under 30MB each</span><input id="image-input" type="file" accept="image/png,image/jpeg,image/webp" multiple aria-label="Add reference images" data-i18n-aria-label="添加参考图"></label>
@@ -47,6 +50,42 @@
     </div>
     <footer><span data-i18n="参考图 → 提示词 → 视频">Reference Images → Prompt → Video</span><a href="https://www.runninghub.cn/workflow/2108942308824670209?source=workspace" target="_blank" rel="noopener noreferrer" id="workflow-link" data-i18n="查看 RunningHub 工作流 ↗">View RunningHub Workflow ↗</a></footer>
   </main>
+
+  <dialog id="creation-dialog" aria-labelledby="creation-title">
+    <div class="dialog-header"><div><span class="step-label">SCRIPT → STORYBOARD → VIDEO</span><h2 id="creation-title" data-i18n="剧本与分镜">Script &amp; Storyboard</h2></div><button id="close-creation" type="button" class="icon-button" aria-label="Close creation dialog" data-i18n-aria-label="关闭创作弹窗">×</button></div>
+    <div class="creation-status-bar"><p id="creation-config-status" role="status"></p><button id="clear-creation" type="button" class="text-button" data-i18n="清空创作草稿">Clear Draft</button></div>
+    <p id="creation-storage-status" class="creation-notice" role="status" hidden></p>
+    <div id="creation-error" class="inline-error" role="alert" hidden></div>
+    <div id="creation-feedback" class="creation-notice creation-feedback" role="status" hidden></div>
+    <p id="creation-stream-status" class="creation-stream-status" role="status" aria-live="polite" hidden></p>
+    <div class="creation-layout">
+      <section class="creation-script-panel" aria-labelledby="creation-script-heading">
+        <h3 id="creation-script-heading" data-i18n="1 · 创作剧本">1 · Create a Script</h3>
+        <label for="creation-prompt" data-i18n="创意与故事要求">Idea &amp; Story Requirements</label>
+        <textarea id="creation-prompt" rows="4" maxlength="20000" placeholder="Describe your story, characters, and audience…" data-i18n-placeholder="描述故事、角色与受众…"></textarea>
+        <button id="generate-script" type="button" class="secondary-button" disabled data-i18n="生成剧本">Generate Script</button>
+        <label for="creation-script-title" data-i18n="剧本标题">Script Title</label><input id="creation-script-title" type="text" maxlength="300">
+        <div class="creation-label-row"><label for="creation-script" data-i18n="可编辑剧本">Editable Script</label><span id="creation-script-count">0 / 40000</span></div>
+        <textarea id="creation-script" rows="16" maxlength="40000" placeholder="Generate a script or paste your own…" data-i18n-placeholder="生成剧本，或粘贴已有剧本…"></textarea>
+        <p class="field-help" data-i18n="草稿保存在当前浏览器，可关闭弹窗后继续。">Drafts are saved in this browser. Close the dialog and continue later.</p>
+      </section>
+      <section class="creation-board-panel" aria-labelledby="creation-board-heading">
+        <h3 id="creation-board-heading" data-i18n="2 · 生成分镜">2 · Create a Storyboard</h3>
+        <div class="creation-options">
+          <label><span data-i18n="分镜数量">Shot Count</span><input id="shot-count" type="number" min="1" max="24" step="1" value="6" required></label>
+          <label><span data-i18n="每镜时长（秒）">Seconds per Shot</span><input id="shot-duration" type="number" min="4" max="15" step="1" value="8" required></label>
+          <label class="creation-wide"><span data-i18n="目标 Prompt 格式">Target Prompt Format</span><select id="target-model"><option value="h3">MiniMax H3</option><option value="generic" data-i18n="通用">Generic</option><option value="custom" data-i18n="自定义">Custom</option></select></label>
+          <label id="custom-model-label" class="creation-wide" hidden><span data-i18n="自定义模型与格式要求">Custom Model &amp; Format Requirements</span><textarea id="custom-model" rows="2" maxlength="2000"></textarea></label>
+          <label class="creation-wide"><span data-i18n="视觉风格（可选）">Visual Style (Optional)</span><input id="visual-style" type="text" maxlength="2000" placeholder="Cinematic realism, animation, advertising…" data-i18n-placeholder="写实电影、动画、广告…"></label>
+        </div>
+        <p class="field-help" data-i18n="格式决定 Prompt 写法；实际视频模型由工作流决定。">The format shapes each Prompt. Your workflow determines the actual video model.</p>
+        <button id="generate-storyboard" type="button" class="primary-button" disabled data-i18n="生成分镜">Generate Storyboard</button>
+        <p id="creation-stale" class="creation-notice" role="status" hidden data-i18n="剧本已更改；现有分镜尚未更新，请重新生成。">The script changed. Regenerate to update the existing storyboard.</p>
+        <p id="creation-empty" class="creation-empty" data-i18n="分镜会显示在这里，每镜都可编辑并用于视频生成。">Your editable shots will appear here. Use each Prompt to create a video.</p>
+        <div id="creation-shots"></div>
+      </section>
+    </div>
+  </dialog>
 
   <dialog id="system-settings-dialog" aria-labelledby="system-settings-title">
     <div class="dialog-header"><div><span class="step-label">SYSTEM SETTINGS</span><h2 id="system-settings-title" data-i18n="系统设置">System Settings</h2></div><button id="close-system-settings" class="icon-button" aria-label="Close system settings" data-i18n-aria-label="关闭系统设置">×</button></div>

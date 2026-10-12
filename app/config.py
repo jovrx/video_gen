@@ -21,6 +21,10 @@ class Settings:
     base_url: str = "https://www.runninghub.cn"
     poll_seconds: float = 5.0
     max_image_bytes: int = 30 * 1024 * 1024
+    llm_base_url: str = "https://api.openai.com/v1"
+    llm_api_key: str = field(default="", repr=False)
+    llm_model: str = ""
+    llm_timeout_seconds: float = 120.0
 
     @classmethod
     def from_env(cls):
@@ -29,4 +33,8 @@ class Settings:
                    api_key=os.getenv("RUNNINGHUB_API_KEY", "").strip(),
                    workflow_id=os.getenv("RUNNINGHUB_WORKFLOW_ID", "2108942308824670209").strip(),
                    base_url=os.getenv("RUNNINGHUB_BASE_URL", "https://www.runninghub.cn").rstrip("/"),
-                   poll_seconds=max(1, float(os.getenv("VIDEO_POLL_SECONDS", "5"))))
+                   poll_seconds=max(1, float(os.getenv("VIDEO_POLL_SECONDS", "5"))),
+                   llm_base_url=os.getenv("LLM_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/"),
+                   llm_api_key=os.getenv("LLM_API_KEY", "").strip(),
+                   llm_model=os.getenv("LLM_MODEL", "").strip(),
+                   llm_timeout_seconds=max(1, min(600, float(os.getenv("LLM_TIMEOUT_SECONDS", "120")))))
